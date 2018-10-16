@@ -1,15 +1,24 @@
+<!-- TOC -->
+
+- [tree based ensemble algorithms](#tree-based-ensemble-algorithms)
+- [主要介绍以下几种ensemble的分类器（tree based algorithms）](#%E4%B8%BB%E8%A6%81%E4%BB%8B%E7%BB%8D%E4%BB%A5%E4%B8%8B%E5%87%A0%E7%A7%8Densemble%E7%9A%84%E5%88%86%E7%B1%BB%E5%99%A8tree-based-algorithms)
+    - [**xgboost**](#xgboost)
+    - [**lightGBM**： **基于决策树算法的分布式梯度提升框架**](#lightgbm-%E5%9F%BA%E4%BA%8E%E5%86%B3%E7%AD%96%E6%A0%91%E7%AE%97%E6%B3%95%E7%9A%84%E5%88%86%E5%B8%83%E5%BC%8F%E6%A2%AF%E5%BA%A6%E6%8F%90%E5%8D%87%E6%A1%86%E6%9E%B6)
+    - [**GBDT(Gradient Boosting Decison Tree)**](#gbdtgradient-boosting-decison-tree)
+    - [**随机森林**](#%E9%9A%8F%E6%9C%BA%E6%A3%AE%E6%9E%97)
+    - [**决策树**](#%E5%86%B3%E7%AD%96%E6%A0%91)
+
+<!-- /TOC -->
+
+
+
 ### tree based ensemble algorithms 
 - 原始的Boost算法是在算法开始的时候，为每个样本赋上一个权重值，初始的时候，每个样本都是同样的重要。在每一步的训练中，得到的模型，会给出每个数据点的估计对错，根据判断的对错，在每一步的训练之后，会增加分错样本的权重，减少分类正确的样本的权重，如果在后续的每一步训练中，如果继续被分错，那么就会被严重的关注，也就是获得了一个比较高的权重。经过N次迭代之后，将会得到N个简单的分类器（basic learner），然后将他们组装起来（可以进行加权，或者进行投票），得到一个最终的模型。
 
-### 主要介绍已下几种ensemble的分类器（tree based algorithms）
-
-- xgboost 
-- lightBMG
-- GDBT
-- Random forest
+### 主要介绍以下几种ensemble的分类器（tree based algorithms）
 
 
-#### xgboost
+#### **xgboost**
 - xgboost能自动利用cpu的多线程，而且适当改进了gradient boosting，加了剪枝，控制了模型的复杂程度
 - 传统的GBDT算法以CART作为基分类器，**xgboost还可以支持线性分类器**，相当于带L1和L2的逻辑斯谛回归或者线性回归
 - 传统的GBDT在优化的时候，使用的是一阶导数信息，**xgboost则对代价函数进行了二阶泰勒展开，同时用到了一阶导数和二阶导数**。顺便提一下，xgboost工具支持自定义代价函数，只要函数可一阶和二阶求导。
@@ -38,9 +47,9 @@
    * 支持分布式计算可以运行在MPI，YARN上，得益于底层支持容错的分布式通信框架rabit。
 
 ![](http://ww1.sinaimg.cn/large/9ebd4c2bgy1fw920cfbyyj20jj0eudhu.jpg)
-##### The correct answer is marked in red. Please consider if this visually seems a reasonable fit to you. The general principle is we want both a simple and predictive model. The tradeoff between the two is also referred as bias-variance tradeoff in machine learning.
+- The correct answer is marked in red. Please consider if this visually seems a reasonable fit to you. The general principle is we want both a simple and predictive model. The tradeoff between the two is also referred as bias-variance tradeoff in machine learning.
 
-#### lightGBM： 基于决策树算法的分布式梯度提升框架
+#### **lightGBM**： **基于决策树算法的分布式梯度提升框架**
 
 - lightGBM 与xgboost的区别：
     - xgboost使用的是pre-sorted算法（对所有的特征都按照特征的数值进行预排序，在遍历分割点的时候用O(data)的代价函数找个一个特征的最好分割点，能够更加精确的找到数据的分割点。
@@ -53,7 +62,7 @@
 
 
 
-#### GBDT(Gradient Boosting Decison Tree)
+#### **GBDT(Gradient Boosting Decison Tree)**
 - GBDT中使用的都是回归树，GBDT用来做回归预测，调整后也可以用于分类，设定阈值，大于阈值为正例，反之为负例，可以发现多种有区分性的特征以及特征组合。
 - GBDT是把所有树的结论累加起来做最终结论，GBDT的核心就在于，每一棵树学的是之前所有树结论和的残差，这个残差就是把一个加预测值后能得到真实值的累加量。
 - 比如A的真实年龄是18岁，但第一棵树的预测年龄是12岁，差了6岁，即残差为6岁。那么在第二棵树里我们把A的年龄设为6岁去学习，如果第二棵树真的能把A分到6岁的叶子节点，那累加两棵树的结论就是A的真实年龄；如果第二棵树的结论是5岁，则A仍然存在1岁的残差，第三棵树里A的年龄就变成1岁，继续学。 Boosting的最大好处在于，每一步的残差计算其实变相地增大了分错instance的权重，而已经分对的instance则都趋向于0。这样后面的树就能越来越专注那些前面被分错的instance。
@@ -79,19 +88,19 @@ The disadvantages of GBRT are:
 - Scalability, due to the sequential nature of boosting it can hardly be parallelized.  
 - Boost是一个串行过程，不好并行化，**而且计算复杂度高，同时不太适合高维稀疏特征。**
 
-#### 随机森林
+#### **随机森林**
  - 是随机的方式建立一个森林，森林里面有很多的决策树组成，随机森林的每一决策树质检是没有关联的。在得到随机森林之后，当有一个新的样本输进的时候，就让森林中的每一棵决策树进行判断，判断样本属于哪一类，然后看哪一类被选择最多，就预测这个样本为这一类。
-#### 随机采样
-- 随机行采样，采用有放回的方式，也就是在采样得到的样本集合中，可能有重复的样本。
-  假如输入的样本为N个，那么采样的样本也是N个。这使得在训练的时候，每棵树的输入的样本都不是全部的样本，使得相对不容易出现over-fitting。
+- 随机采样
+    - 随机行采样，采用有放回的方式，也就是在采样得到的样本集合中，可能有重复的样本。
+    假如输入的样本为N个，那么采样的样本也是N个。这使得在训练的时候，每棵树的输入的样本都不是全部的样本，使得相对不容易出现over-fitting。
 
-- 随机列采样，从M个feature中，选择m个(m<<M)。
-  对采样之后的数据使用完全分裂的方式建立决策树，这样的决策树的某个叶子节点要么无法继续分裂，要么里面所有的样本都是指向的同一分类。
+    - 随机列采样，从M个feature中，选择m个(m<<M)。
+    对采样之后的数据使用完全分裂的方式建立决策树，这样的决策树的某个叶子节点要么无法继续分裂，要么里面所有的样本都是指向的同一分类。
 - 随机森林 中同样有剪枝，限制决策树的最大深度，以及最小的样本分裂，最小的节点样本数目，样本分裂节点的信息增益或gini系数必须达到的阈值
 - 随机森林用于分类的话，划分标准是entropy或者gini系数
 - 随机森林用于回归的话，划分标准是mse(mean squared error)或者mae(mean absolute error)
 
-
+#### **决策树**
 
 - ID3 信息增益：熵（数据的不确定性程度）的减少；一个属性的信息增益量越大，这个属性作为一棵树的根节点就能使这棵树更简洁。
 信息增益=分裂前的熵 – 分裂后的熵
