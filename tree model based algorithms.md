@@ -43,4 +43,69 @@
 #### lightGBM： 基于决策树算法的分布式梯度提升框架
 
 - lightGBM 与xgboost的区别：
-- 
+    - xgboost使用的是pre-sorted算法（对所有的特征都按照特征的数值进行预排序，在遍历分割点的时候用O(data)的代价函数找个一个特征的最好分割点，能够更加精确的找到数据的分割点。
+    - lightGBM 使用的是histogram算法，占用内存更低，数据分割的复杂度更低。
+- 决策树生长策略上
+    - xgboost采用的是level-wise生长策略，能够同时分类同一层的叶子，从而进行多线程优化，不容易过拟合，但是不加区分的对待同一层的叶子，带来了很多没有必要的开销(有很多的叶子分裂增益较低，没有必要进行搜索和分裂) 
+    - lightGBM采用的是leaf-wise的生长策略，每次从当前的叶子中找到分裂增益最大的（一般也是数据量最大）的一个叶子进行分裂，如此循环；但是生长出的决策树枝叶过多，产生过拟合，lightGBM在leaf-wise上增加了一个最大深度的限制，在保证高效率的同时防止过拟合。
+    - 另一个巧妙的优化是histogram做差加速，一个容易观察到的现象：一个叶子的直方图可以由它的父节点的直方图与它兄弟的直方图做差得到。
+![](http://ww1.sinaimg.cn/large/9ebd4c2bgy1fw9uxam080j20ey03oq3w.jpg)
+
+
+
+#### GBDT(Gradient Boosting Decison Tree)
+- GBDT中使用的都是回归树，GBDT用来做回归预测，调整后也可以用于分类，设定阈值，大于阈值为正例，反之为负例，可以发现多种有区分性的特征以及特征组合。
+- GBDT是把所有树的结论累加起来做最终结论，GBDT的核心就在于，每一棵树学的是之前所有树结论和的残差，这个残差就是把一个加预测值后能得到真实值的累加量。
+- 比如A的真实年龄是18岁，但第一棵树的预测年龄是12岁，差了6岁，即残差为6岁。那么在第二棵树里我们把A的年龄设为6岁去学习，如果第二棵树真的能把A分到6岁的叶子节点，那累加两棵树的结论就是A的真实年龄；如果第二棵树的结论是5岁，则A仍然存在1岁的残差，第三棵树里A的年龄就变成1岁，继续学。 Boosting的最大好处在于，每一步的残差计算其实变相地增大了分错instance的权重，而已经分对的instance则都趋向于0。这样后面的树就能越来越专注那些前面被分错的instance。
+
+- GBDT划分标准默认是friedman_mse可以查看[sklearn 官方文档中GBDT的参数说明 ](http://scikit-learn.org/stable/modules/generated/sklearn.ensemble.GradientBoostingClassifier.html#sklearn.ensemble.GradientBoostingClassifier)
+
+- Gradient Boost与传统的Boost的区别是
+- 每一次的计算是为了减少上一次的残差(residual)，而为了消除残差，我们可以在残差减少的梯度(Gradient)方向上建立一个新的模型。
+- 所以说，在Gradient Boost中，每个新的模型的建立是为了使得之前模型的残差往梯度方向减少。
+- Shrinkage（缩减）的思想认为，每次走一小步逐渐逼近结果的效果，要比每次迈一大步很快逼近结果的方式更容易避免过拟合。
+- 即它不完全相信每一棵残差树，他认为每棵树只学到了真理的一部分，累加的时候只累加一小部分，每次通过多学几棵树弥补不足。
+- 本质上，**Shrinkage为每棵树设置了一个weight，累加时要乘以这个weight，但和Gradient并没有关系**。
+- The advantages of GBRT are:
+
+- Natural handling of data of mixed type (= heterogeneous features)
+- 可以处理不同性质的属性，数值特征与category特征，
+- 数值特征需要进行数据的预处理
+- Predictive power
+- Robustness to outliers in output space (via robust loss functions)
+  
+The disadvantages of GBRT are:
+
+- Scalability, due to the sequential nature of boosting it can hardly be parallelized.  
+- Boost是一个串行过程，不好并行化，**而且计算复杂度高，同时不太适合高维稀疏特征。**
+
+#### 随机森林
+ - 是随机的方式建立一个森林，森林里面有很多的决策树组成，随机森林的每一决策树质检是没有关联的。在得到随机森林之后，当有一个新的样本输进的时候，就让森林中的每一棵决策树进行判断，判断样本属于哪一类，然后看哪一类被选择最多，就预测这个样本为这一类。
+#### 随机采样
+- 随机行采样，采用有放回的方式，也就是在采样得到的样本集合中，可能有重复的样本。
+  假如输入的样本为N个，那么采样的样本也是N个。这使得在训练的时候，每棵树的输入的样本都不是全部的样本，使得相对不容易出现over-fitting。
+
+- 随机列采样，从M个feature中，选择m个(m<<M)。
+  对采样之后的数据使用完全分裂的方式建立决策树，这样的决策树的某个叶子节点要么无法继续分裂，要么里面所有的样本都是指向的同一分类。
+- 随机森林 中同样有剪枝，限制决策树的最大深度，以及最小的样本分裂，最小的节点样本数目，样本分裂节点的信息增益或gini系数必须达到的阈值
+- 随机森林用于分类的话，划分标准是entropy或者gini系数
+- 随机森林用于回归的话，划分标准是mse(mean squared error)或者mae(mean absolute error)
+
+
+
+- ID3 信息增益：熵（数据的不确定性程度）的减少；一个属性的信息增益量越大，这个属性作为一棵树的根节点就能使这棵树更简洁。
+信息增益=分裂前的熵 – 分裂后的熵
+面对类别较少的离散数据时效果较好，但如果面对连续的数据（如体重、身高、年龄、距离等），或者每列数据没有明显的类别之分（最极端的例子的该列所有数据都独一无二），即每个值对应一类样本
+- C4.5信息增益比：克服了ID3用信息增益选择属性时偏向选择取值多的属性的不足（**某个属性存在大量的不同值，在划分时将每个值分为一个结点**）
+
+- CART 使用基尼系数进行分类
+基尼指数Gini(D)表示集合D的不确定性，基尼指数Gini(D,A)表示经A＝a分割后集合D的不确定性。基尼指数值越大，样本集合的不确定性也就越大，这一点与熵相似。
+![](http://ww1.sinaimg.cn/mw690/9ebd4c2bgy1fwa5y85jk5j20cl03smxh.jpg)
+![](http://ww1.sinaimg.cn/mw690/9ebd4c2bgy1fwa5v5nbrsj20g9040dge.jpg)
+- 分类与回归树（CART）:二叉树形式，分类时：**根据Gini指数选择划分特征**
+- 回归时：Los为 **平方损失函数**，最小化均方误差选择划分特征，切分点（值）将数据切分成两部分，用平方误差最小的准则（最小二乘法）求解每个单元上的最优输出值（**每个叶子节点上的预测值为所有样本的平均值**）。
+![](http://ww1.sinaimg.cn/mw690/9ebd4c2bgy1fwa63i1g2oj20gg02omxi.jpg)
+    用选定的对（j,s）划分区域并决定相应的输出值，每个叶子节点上的预测值为所有样本的平均值：
+![](http://ww1.sinaimg.cn/mw690/9ebd4c2bgy1fwa65n9f8uj20ge03rmxu.jpg)
+
+- 决策树的生成通常使用 **信息增益最大、信息增益比最大或基尼指数最小**作为特征选择的准则。

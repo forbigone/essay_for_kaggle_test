@@ -129,6 +129,8 @@ GBDT(Gradient Boosting Decision Tree) 又叫 MART（Multiple Additive Regression
 The advantages of GBRT are:
 
 - Natural handling of data of mixed type (= heterogeneous features)
+- 可以处理不同性质的属性，数值特征与category特征，
+- 数值特征需要进行数据的预处理
 - Predictive power
 - Robustness to outliers in output space (via robust loss functions)
   
