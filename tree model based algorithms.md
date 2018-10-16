@@ -117,4 +117,7 @@ The disadvantages of GBRT are:
     用选定的对（j,s）划分区域并决定相应的输出值，每个叶子节点上的预测值为所有样本的平均值：
 ![](http://ww1.sinaimg.cn/mw690/9ebd4c2bgy1fwa65n9f8uj20ge03rmxu.jpg)
 
+    [可以参看该repository中的另外文章中介绍的回归树](https://github.com/point6013/essay/blob/master/GBDT.md#dt-%E5%9B%9E%E5%BD%92%E6%A0%91-regression-decision-tree)
+
+
 - 决策树的生成通常使用 **信息增益最大、信息增益比最大或基尼指数最小**作为特征选择的准则。
