@@ -66,10 +66,11 @@
 - GBDT中使用的都是回归树，GBDT用来做回归预测，调整后也可以用于分类，设定阈值，大于阈值为正例，反之为负例，可以发现多种有区分性的特征以及特征组合。
 - GBDT是把所有树的结论累加起来做最终结论，GBDT的核心就在于，每一棵树学的是之前所有树结论和的残差，这个残差就是把一个加预测值后能得到真实值的累加量。
 - 比如A的真实年龄是18岁，但第一棵树的预测年龄是12岁，差了6岁，即残差为6岁。那么在第二棵树里我们把A的年龄设为6岁去学习，如果第二棵树真的能把A分到6岁的叶子节点，那累加两棵树的结论就是A的真实年龄；如果第二棵树的结论是5岁，则A仍然存在1岁的残差，第三棵树里A的年龄就变成1岁，继续学。 Boosting的最大好处在于，每一步的残差计算其实变相地增大了分错instance的权重，而已经分对的instance则都趋向于0。这样后面的树就能越来越专注那些前面被分错的instance。
+- 用公式来表示提升树的部分原理 ![](http://ww1.sinaimg.cn/large/9ebd4c2bgy1fwb1vcxifkj20qy0ftq5d.jpg)
 
 - GBDT划分标准默认是friedman_mse可以查看[sklearn 官方文档中GBDT的参数说明 ](http://scikit-learn.org/stable/modules/generated/sklearn.ensemble.GradientBoostingClassifier.html#sklearn.ensemble.GradientBoostingClassifier)
 
-- Gradient Boost与传统的Boost的区别是
+- Gradient Boost与传统的Boost的区别
 - 每一次的计算是为了减少上一次的残差(residual)，而为了消除残差，我们可以在残差减少的梯度(Gradient)方向上建立一个新的模型。
 - 所以说，在Gradient Boost中，每个新的模型的建立是为了使得之前模型的残差往梯度方向减少。
 - Shrinkage（缩减）的思想认为，每次走一小步逐渐逼近结果的效果，要比每次迈一大步很快逼近结果的方式更容易避免过拟合。
